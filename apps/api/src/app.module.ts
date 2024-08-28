@@ -5,11 +5,19 @@ import { GraphQLModule } from '@nestjs/graphql'
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo'
 import { join } from 'path'
 import { ConfigModule } from '@nestjs/config'
-import { UsersModule } from './users/users.module'
+import { UsersModule } from './models/users/users.module'
+import { JwtModule } from '@nestjs/jwt'
 
+// TODO: Move this to a util library
+const MAX_AGE = 24 * 60 * 60
 @Module({
   imports: [
     ConfigModule.forRoot(),
+    JwtModule.register({
+      global: true,
+      secret: process.env.JWT_SECRET,
+      signOptions: { expiresIn: MAX_AGE },
+    }),
     GraphQLModule.forRoot<ApolloDriverConfig>({
       driver: ApolloDriver,
       introspection: true,
