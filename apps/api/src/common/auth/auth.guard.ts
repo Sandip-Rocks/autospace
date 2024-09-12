@@ -37,15 +37,21 @@ export class AuthGuard implements CanActivate {
 
     try {
       const payload = await this.jwtService.verify(token)
-      const { uid } = payload
-
-      if (!payload.uid) {
-        throw new UnauthorizedException('Invalid token.')
+      const uid = payload.uid
+      if (!uid) {
+        throw new UnauthorizedException(
+          'Invalid token. No uid present in the token.',
+        )
       }
+
       const user = await this.prisma.user.findUnique({ where: { uid } })
       if (!user) {
-        throw new UnauthorizedException('User not found.')
+        throw new UnauthorizedException(
+          'Invalid token. No user present with the uid.',
+        )
       }
+
+      console.log('jwt payload: ', payload)
       req.user = payload
     } catch (err) {
       console.error('Token validation error:', err)
@@ -61,10 +67,10 @@ export class AuthGuard implements CanActivate {
     req: any,
     context: ExecutionContext,
   ): Promise<boolean> {
+    const requiredRoles = this.getMetadata<Role[]>('roles', context)
     const userRoles = await this.getUserRoles(req.user.uid)
     req.user.roles = userRoles
 
-    const requiredRoles = this.getMetadata<Role[]>('roles', context)
     if (!requiredRoles || requiredRoles.length === 0) {
       return true
     }
@@ -80,15 +86,18 @@ export class AuthGuard implements CanActivate {
   }
 
   private async getUserRoles(uid: string): Promise<Role[]> {
-    const rolePromises = [
-      this.prisma.admin.findUnique({ where: { uid } }),
-      // Add promises for other role models here
-    ]
-
     const roles: Role[] = []
 
-    const [admin] = await Promise.all(rolePromises)
+    const [admin, manager, valet] = await Promise.all([
+      this.prisma.admin.findUnique({ where: { uid } }),
+      this.prisma.manager.findUnique({ where: { uid } }),
+      this.prisma.valet.findUnique({ where: { uid } }),
+      // Add promises for other role models here
+    ])
+
     admin && roles.push('admin')
+    manager && roles.push('manager')
+    valet && roles.push('valet')
 
     return roles
   }
