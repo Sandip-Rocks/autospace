@@ -1,5 +1,16 @@
+'use client'
 import { add } from '@parkpro/sample-lib'
+import { useQuery } from '@apollo/client'
+import { CompaniesDocument } from '@parkpro/network/src/gql/generated'
 
 export default function Home() {
-  return <main>Hello {add(2, 2)}</main>
+  const { data, loading } = useQuery(CompaniesDocument)
+  console.log(data);
+  
+  return (
+    <main>
+      Hello {add(2, 2)}
+      <div>{data?.companies.map((c) => c.displayName)}</div>
+    </main>
+  )
 }
