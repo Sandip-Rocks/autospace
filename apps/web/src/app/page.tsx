@@ -5,8 +5,7 @@ import { CompaniesDocument } from '@parkpro/network/src/gql/generated'
 
 export default function Home() {
   const { data, loading } = useQuery(CompaniesDocument)
-  console.log(data);
-  
+
   return (
     <main>
       Hello {add(2, 2)}
